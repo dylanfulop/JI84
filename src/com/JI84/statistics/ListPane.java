@@ -17,10 +17,11 @@ public class ListPane extends GridPane
 	private Label[] labels;
 	private TextField[][] entries;
 	private Double[][] lists;
-	MathMode mode;
-
-	public ListPane(MathMode m) {
+	private MathMode mode;
+	private StatsPane statPane;
+	public ListPane(MathMode m, StatsPane sp) {
 		mode = m;
+		statPane = sp;
 		this.lists = Main.lists;
 
 		this.setPadding(new Insets(20 * Main.scale, 20 * Main.scale,20 * Main.scale,20 * Main.scale));
@@ -43,6 +44,7 @@ public class ListPane extends GridPane
 	}
 
 	public void update() {
+		statPane.update();
 		for(int i = 0; i < entries.length; i++) {
 			for(int j = 0; j < entries[0].length; j++) {
 				if(entries[i][j] !=null) {
