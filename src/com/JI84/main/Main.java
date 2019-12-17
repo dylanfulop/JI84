@@ -19,7 +19,7 @@ import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
 public class Main extends Application{
-public static final double scale = 6.5/8.0;
+public static final double scale = 8.0/8.0;
 	
 private MathMode mode;
 private Window window;
@@ -49,8 +49,8 @@ public static ArrayList<String> equations;
 		WdwPane wdwPane = new WdwPane(mode);
 		GraphPane graph = new GraphPane(mode);
 		ModePane modePane = new ModePane(mode, wdwPane, eqPane);
-		ListPane listPane = new ListPane(mode);
 		StatsPane statPane = new StatsPane();
+		ListPane listPane = new ListPane(mode, statPane);
 		
 		//setup tab variables
 		Tab mainTab = new Tab();
@@ -90,7 +90,7 @@ public static ArrayList<String> equations;
 		
 		//create scene and place it on stage
 		Scene scene = new Scene(root, 800 * Main.scale, 800 * Main.scale);
-		primaryStage.setTitle("Honors Project");
+		primaryStage.setTitle("JI84");
 		primaryStage.setResizable(false);
 		primaryStage.setScene(scene);
 		primaryStage.centerOnScreen();
