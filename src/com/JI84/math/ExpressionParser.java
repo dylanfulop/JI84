@@ -3,6 +3,7 @@ package com.JI84.math;
 import java.util.Random;
 
 import com.JI84.main.Main;
+import com.JI84.statistics.StatsUtil;
 
 public class ExpressionParser {
 
@@ -149,7 +150,6 @@ public class ExpressionParser {
 						l += ", " + d[j];
 				}
 				exp = exp.replace("L" + i, l);
-				System.out.println(exp);
 			}
 		}
 		return exp;
@@ -265,7 +265,7 @@ public class ExpressionParser {
 		exp = max(x, var, exp);
 		exp = min(x, var, exp);
 		exp = sum(x, var, exp);
-		exp = avg(x, var, exp);
+		exp = stats(x, var, exp);
 		exp = product(x, var, exp);
 
 		//limited parameter functions
@@ -717,7 +717,7 @@ public class ExpressionParser {
 	 * @param exp The expression to be read
 	 * @return The expression with the functions solved and replaced
 	 */
-	private String avg(double x, String var, String exp){
+	private String stats(double x, String var, String exp){
 		int avgI = exp.indexOf("avg");
 		while(avgI != -1){
 			Object[] fcimp = findCloseIndexMultiParam("avg", exp, avgI);
@@ -778,8 +778,120 @@ public class ExpressionParser {
 			exp = exp.replace(exp.substring(stdI, closeIndex+1), "" + Math.sqrt(variance));
 			stdI = exp.indexOf("stddev");
 		}
+		int nI = exp.indexOf("numEntries");
+		while(nI != -1){
+			Object[] fcimp = findCloseIndexMultiParam("numEntries", exp, nI);
+			int closeIndex = (int)fcimp[0];
+			exp = (String)fcimp[1];
+			String[] split = exp.substring(nI+11, closeIndex).split("_,_");
+			int count = 0;
+			if(split[0].equals("") || split[0].equals("null")){
+				count--;
+			}
+			for(String s : split){
+				count++;
+			}
+			exp = exp.replace(exp.substring(nI, closeIndex+1), "" + count);
+			nI = exp.indexOf("numEntries");
+		}
+		exp = sortStats(x, var, exp);
 		return exp;
 	}
+	public String sortStats(double x, String var, String exp){
+		int FQI = exp.indexOf("FQ");
+		while(FQI != -1){
+			Object[] fcimp = findCloseIndexMultiParam("FQ", exp, FQI);
+			int closeIndex = (int)fcimp[0];
+			exp = (String)fcimp[1];
+			String[] split = exp.substring(FQI+3, closeIndex).split("_,_");
+			double fq = 0;
+			double[] ar = StatsUtil.sort(split, x, var, this);
+			int len = ar.length/2;
+			if(len == 0)
+				fq = ar[0];
+			else if(len % 2 == 0){
+				fq = ar[len/2];
+				fq += ar[len/2 - 1];
+				fq /= 2;
+			}else{
+				fq = ar[len/2];
+			}
+			exp = exp.replace(exp.substring(FQI, closeIndex+1), "" + fq);
+			FQI = exp.indexOf("FQ");
+		}
+		int TQI = exp.indexOf("TQ");
+		while(TQI != -1){
+			Object[] fcimp = findCloseIndexMultiParam("TQ", exp, TQI);
+			int closeIndex = (int)fcimp[0];
+			exp = (String)fcimp[1];
+			String[] split = exp.substring(TQI+3, closeIndex).split("_,_");
+			double tq = 0;
+			double[] ar = StatsUtil.sort(split, x, var, this);
+			int mid = ar.length/2;
+			if(ar.length % 2 != 0)
+				mid+=1;
+			int len = ar.length - mid;
+			if(ar.length == 1)
+				tq = ar[0];
+			else if(len % 2 == 0){
+				tq = ar[mid+len/2];
+				tq += ar[mid+len/2 - 1];
+				tq /= 2;
+			}else{
+				tq = ar[mid+len/2];
+			}
+			
+			exp = exp.replace(exp.substring(TQI, closeIndex+1), "" + tq);
+			TQI = exp.indexOf("TQ");
+		}
+		int medI = exp.indexOf("med");
+		while(medI != -1){
+			Object[] fcimp = findCloseIndexMultiParam("med", exp, medI);
+			int closeIndex = (int)fcimp[0];
+			exp = (String)fcimp[1];
+			String[] split = exp.substring(medI+4, closeIndex).split("_,_");
+			double median = 0;
+			double[] ar = StatsUtil.sort(split, x, var, this);
+			if(ar.length % 2 == 0){
+				median = ar[ar.length/2];
+				median += ar[ar.length/2 - 1];
+				median /= 2;
+			}else{
+				median = ar[ar.length/2];
+			}
+			exp = exp.replace(exp.substring(medI, closeIndex+1), "" + median);
+			medI = exp.indexOf("med");
+		}
+		int modeI = exp.indexOf("mode");
+		while(modeI != -1){
+			Object[] fcimp = findCloseIndexMultiParam("mode", exp, modeI);
+			int closeIndex = (int)fcimp[0];
+			exp = (String)fcimp[1];
+			String[] split = exp.substring(modeI+5, closeIndex).split("_,_");
+			double[] ar = StatsUtil.sort(split, x, var, this);
+			double mode = ar[0];
+			int modeS = 1;
+			int curS = 1;
+			for(int i = 1; i < ar.length; i++){
+				if(ar[i] == ar[i-1])
+					curS++;
+				else
+					curS = 1;
+				if(ar[i] == mode){
+					modeS++;
+				}else{
+					if(curS > modeS){
+						mode = ar[i];
+						modeS = curS;
+					}
+				}
+			}
+			exp = exp.replace(exp.substring(modeI, closeIndex+1), "" + mode);
+			modeI = exp.indexOf("mode");
+		}
+		return exp;
+	}
+	
 	/**
 	 * Called by the parameter funcs method, solves the product of a list of entries product(a, b, c, d, e, f, ...)
 	 * @param x The value of the variable that should be used
