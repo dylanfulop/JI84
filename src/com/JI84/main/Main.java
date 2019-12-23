@@ -9,12 +9,14 @@ import com.JI84.graphing.Window;
 import com.JI84.math.MathMode;
 import com.JI84.math.ModePane;
 import com.JI84.statistics.ListPane;
+import com.JI84.statistics.PlotsPane;
 import com.JI84.statistics.StatsPane;
 
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
@@ -31,7 +33,7 @@ public static ArrayList<String> equations;
  * Start the application
  */
 	public void start(Stage primaryStage) throws Exception {
-		lists = new Double[8][20];
+		lists = new Double[8][50];
 		equations = new ArrayList<String>();
 		for(int i = 1; i <= 16; i++){//so that we can use indexes other than 0 to refer to equations
 			equations.add("");
@@ -47,10 +49,16 @@ public static ArrayList<String> equations;
 		MainPane mainPane = new MainPane(mode);//root pane
 		EqPane eqPane = new EqPane(mode);
 		WdwPane wdwPane = new WdwPane(mode);
-		GraphPane graph = new GraphPane(mode);
+		PlotsPane plotsPane = new PlotsPane();
+		GraphPane graph = new GraphPane(mode, plotsPane);
 		ModePane modePane = new ModePane(mode, wdwPane, eqPane);
-		StatsPane statPane = new StatsPane();
+		StatsPane statPane = new StatsPane(eqPane);
 		ListPane listPane = new ListPane(mode, statPane);
+		statPane.setLP(listPane);
+		
+		HBox settings = new HBox();
+		settings.getChildren().add(modePane);
+		settings.getChildren().add(wdwPane);
 		
 		//setup tab variables
 		Tab mainTab = new Tab();
@@ -58,34 +66,34 @@ public static ArrayList<String> equations;
 		mainTab.setClosable(false);
 		mainTab.setContent(mainPane);
 		Tab eqTab = new Tab();
-		eqTab.setText("y=");
+		eqTab.setText("Equations");
 		eqTab.setClosable(false);
 		eqTab.setContent(eqPane);
-		Tab wdwTab = new Tab();
-		wdwTab.setText("window");
-		wdwTab.setClosable(false);
-		wdwTab.setContent(wdwPane);
+		Tab setTab = new Tab();
+		setTab.setText("Mode & Window");
+		setTab.setClosable(false);
+		setTab.setContent(settings);
 		Tab graphTab = new Tab();
 		graphTab.setClosable(false);
-		graphTab.setText("graph");
+		graphTab.setText("Graphing");
 		graphTab.setContent(graph);
-		Tab modeTab = new Tab();
-		modeTab.setClosable(false);
-		modeTab.setText("mode");
-		modeTab.setContent(modePane);
 		Tab listTab = new Tab();
 		listTab.setClosable(false);
-		listTab.setText("lists");
+		listTab.setText("Lists");
 		listTab.setContent(listPane);
 		Tab statTab = new Tab();
 		statTab.setClosable(false);
 		statTab.setContent(statPane);
-		statTab.setText("stats");
+		statTab.setText("Statistics");
+		Tab plotTab = new Tab();
+		plotTab.setClosable(false);
+		plotTab.setContent(plotsPane);
+		plotTab.setText("Plots");
 		
 		
 		//set up tab pane
 		tabPane.getSelectionModel().select(0);
-		tabPane.getTabs().addAll(mainTab, eqTab, wdwTab, graphTab, modeTab, listTab, statTab);
+		tabPane.getTabs().addAll(mainTab, eqTab, setTab, graphTab, listTab, statTab, plotTab);
 		root.getChildren().add(tabPane);
 		
 		//create scene and place it on stage
