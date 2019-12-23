@@ -3,6 +3,7 @@ package com.JI84.statistics;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 
+import com.JI84.graphing.EqPane;
 import com.JI84.main.Main;
 import com.JI84.math.ExpressionParser;
 import com.JI84.math.MathMode;
@@ -10,18 +11,29 @@ import com.JI84.math.MathMode;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
+import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 
 public class StatsPane extends GridPane{
 	private ArrayList<Label> labels;
 	private ComboBox<String> cb1;
 	private ComboBox<String> cb2;
+	private ComboBox<String> cby;
+	private ComboBox<String> cbr;
+	private EqPane eqPane;
+	private ListPane lPane;
+	private HBox copyYBox;
+	private HBox copyRBox;
+	private String line;
 	/**
 	 * Create statspane object
 	 */
-	public StatsPane() {
+	public StatsPane(EqPane eqp) {
+		eqPane = eqp;
+		line = "";
 		labels = new ArrayList<Label>();
 		ArrayList<String> selections = new ArrayList<String>();
 		for(int i = 1; i <= 8; i++)
@@ -32,6 +44,23 @@ public class StatsPane extends GridPane{
 		cb2.getItems().addAll(selections);
 		cb1.getSelectionModel().selectFirst();
 		cb2.getSelectionModel().selectFirst();
+
+		cbr = new ComboBox<String>();
+		cbr.getItems().addAll(selections);
+		cbr.getSelectionModel().selectFirst();
+
+		cby = new ComboBox<String>();
+		for(int i = 1; i <= 8; i++)
+			cby.getItems().add("Y" + i);
+		cby.getSelectionModel().selectFirst();
+		Button copytoy = new Button("Copy Line to");
+		copytoy.setOnAction(new Listener());
+		Button copytor = new Button("Copy Residuals to");
+		copytor.setOnAction(new Listener());
+		copyYBox = new HBox();
+		copyYBox.getChildren().addAll(copytoy, cby);
+		copyRBox = new HBox();
+		copyRBox.getChildren().addAll(copytor, cbr);
 
 		cb1.setOnAction(new Listener());
 		cb2.setOnAction(new Listener());
@@ -47,7 +76,7 @@ public class StatsPane extends GridPane{
 		this.getChildren().clear();
 
 		this.setPadding(new Insets(20*Main.scale,20*Main.scale,20*Main.scale,20*Main.scale));
-		this.setHgap(20*Main.scale);
+		this.setHgap(10*Main.scale);
 		this.setVgap(20*Main.scale);
 		labels.clear();
 
@@ -97,7 +126,9 @@ public class StatsPane extends GridPane{
 			double b = meany - m*meanx;
 			DecimalFormat fmt = new DecimalFormat("0.#####");
 			labels.add(new Label(l2 + " ~= " + fmt.format(m) + "*" + l1 + " + " + fmt.format(b)));
-			
+			line = m + "*x + " + b;
+			add(copyYBox, 2, 4);
+			add(copyRBox, 2, 5);
 		}
 	}
 
@@ -138,6 +169,39 @@ public class StatsPane extends GridPane{
 	private class Listener implements EventHandler<ActionEvent>{
 		public void handle(ActionEvent event) {
 			update();
+			if(event.getSource() instanceof Button){
+				if(((Button)event.getSource()).getText().equals("Copy Line to")){
+					int eqI = Integer.parseInt(cby.getSelectionModel().getSelectedItem().replace("Y", "")) - 1;
+					Main.equations.set(eqI, line);
+					eqPane.update();
+				}
+				if(((Button)event.getSource()).getText().equals("Copy Residuals to")){
+					int lI = Integer.parseInt(cbr.getSelectionModel().getSelectedItem().replace("L", "")) - 1;
+					int xlI = Integer.parseInt(cb1.getSelectionModel().getSelectedItem().replace("L", "")) - 1;
+					int ylI = Integer.parseInt(cb2.getSelectionModel().getSelectedItem().replace("L", "")) - 1;
+					int length = Math.min(length(Main.lists[xlI]), length(Main.lists[ylI]));
+					MathMode mode = new MathMode(true, 0, 0, null);
+					ExpressionParser expParse = new ExpressionParser(mode, 0);
+					for(int i = 0; i < length; i++){
+						double residual = expParse.readExp(Main.lists[xlI][i], "x", line);
+						residual = Main.lists[ylI][i] - residual;
+						Main.lists[lI][i] = residual;
+					}
+					lPane.update();
+				}
+			}
+		}
+		private int length(Double[] ar){
+			for(int i = 0; i < ar.length; i++){
+				if(ar[i] == null)
+					return i;
+			}
+			return ar.length;
 		}
 	}
+
+	public void setLP(ListPane listPane) {
+		this.lPane = listPane;
+	}
+
 }

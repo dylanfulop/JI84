@@ -47,11 +47,14 @@ public class ListPane extends GridPane
 		statPane.update();
 		for(int i = 0; i < entries.length; i++) {
 			for(int j = 0; j < entries[0].length; j++) {
-				if(entries[i][j] !=null) {
+				if(Main.lists[i][j] != null){
+					entries[i][j] = new TextField(Main.lists[i][j] + "") ;
+					entries[i][j].setOnAction(new TFHandler(i, j));
+				}
+				if(entries[i][j]!=null) {
 					try {
 						this.add(entries[i][j], i, j+1);
 					}catch(java.lang.IllegalArgumentException e) {
-						entries[i][j].setOnAction(new TFHandler(i, j));
 					}
 				}
 			}
@@ -66,14 +69,17 @@ public class ListPane extends GridPane
 			j = J;
 		}
 		public void handle(ActionEvent event) {
+			System.out.println(i + ", " + j);
 			TextField tf = (TextField)event.getSource();
 			String s = tf.getText();
 			ExpressionParser ep = new ExpressionParser(mode, 0);
 			double d = ep.readExp(s);
 			if(d != 0.0/0.0) {
 				lists[i][j] = d;
-				entries[i][j+1] = new TextField();
-				entries[i][j+1].setOnAction(new TFHandler(i, j+1));
+				if(entries[i][j+1] == null){
+					entries[i][j+1] = new TextField();
+					entries[i][j+1].setOnAction(new TFHandler(i, j+1));
+				}
 				update();
 			}
 
