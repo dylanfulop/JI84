@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import com.JI84.main.Main;
 import com.JI84.math.ExpressionParser;
 import com.JI84.math.MathMode;
+import com.JI84.statistics.PlotsPane;
 
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -20,6 +21,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
+import javafx.scene.shape.Shape;
 
 public class GraphPane extends BorderPane{
 	private MathMode mode;
@@ -41,6 +43,7 @@ public class GraphPane extends BorderPane{
 	private int boundToSelect; //-1 left 0 neither 1 right
 	private Line leftBound;
 	private Line rightBound;
+	private PlotsPane plotsPane;
 	private final String[] colors = {"RED", "BLUE", "YELLOW", "GREEN", "PURPLE", "ORANGE", "AQUA", "BLACK"};
 
 	//total window is 800x800 graph should be 700x700
@@ -49,8 +52,9 @@ public class GraphPane extends BorderPane{
 	 * Creates a new graph pane by creating axes and tick marks with the current window's settings
 	 * and adding buttons to the bottom pane
 	 */
-	public GraphPane(MathMode mode){
+	public GraphPane(MathMode mode, PlotsPane pp){
 		this.mode = mode;
+		this.plotsPane = pp;
 		boundToSelect = 0;
 
 		bottomBar = new HBox();
@@ -410,6 +414,7 @@ public class GraphPane extends BorderPane{
 			double xscl = (700.0 * Main.scale)/(wdw.getXmax()-wdw.getXmin()); 
 			getChildren().add(transform(-3/xscl, y, 3/xscl, y));
 		}
+
 		for(double x = wdw.getXmin(); x <= wdw.getXmax(); x+=wdw.getXscale()){
 			double yscl = (700.0 * Main.scale)/(wdw.getYmax()-wdw.getYmin()); 
 			getChildren().add(transform(x, -3/yscl, x, 3/yscl));
@@ -425,6 +430,13 @@ public class GraphPane extends BorderPane{
 					if(Main.equations.get(2*(i-1)+1) != null && !Main.equations.get(2*(i-1)+1).equals(""))
 						graph(i);
 			}	
+		}
+		for(int i = 0; i < 5; i++){
+			Plot p = plotsPane.getPlot(i);
+			if(p != null)
+				for(Shape s : p.graph(wdw)){
+					this.getChildren().add(s);
+				}
 		}
 	}
 
@@ -457,7 +469,7 @@ public class GraphPane extends BorderPane{
 				y = exparse.readExp(selCurve1.getSelectionModel().getSelectedItem()+ "(" + xMin + ")");
 				outputLab.setText(outputLab.getText() + ", " + selCurve2.getSelectionModel().getSelectedItem()+ "(" + fmt.format(xMin) + ")=" + fmt.format(y));
 			}
-			
+
 			getChildren().removeAll(leftBound, rightBound);
 			leftBound = null;
 			rightBound = null;
@@ -492,7 +504,7 @@ public class GraphPane extends BorderPane{
 			double x1 = transformX(leftBound.getStartX());
 			double x2 = transformX(rightBound.getStartX());
 			min("abs(" + selCurve1.getSelectionModel().getSelectedItem() + "(x) - " + selCurve2.getSelectionModel().getSelectedItem() + "(x))", x1, x2, x1, mode.getWdw().getStepSize(), 0, 7, true);
-		
+
 		}
 	}
 
