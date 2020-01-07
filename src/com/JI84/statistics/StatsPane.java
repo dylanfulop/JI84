@@ -161,7 +161,7 @@ public class StatsPane extends GridPane{
 		labels.add(new Label(iqr));
 		String s = prefix + "sum: " + exp.readExp("sum(" + l + ")");
 		labels.add(new Label(s));
-		String pr = prefix + "product: " + exp.readExp("product(" + l + ")");
+		String pr = prefix + "product: " + exp.readExp("prod(" + l + ")");
 		labels.add(new Label(pr));
 
 	}
