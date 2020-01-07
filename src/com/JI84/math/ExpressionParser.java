@@ -124,6 +124,8 @@ public class ExpressionParser {
 	private String reduce(double x, String var, String exp){
 		exp = implicitMult(x, var, exp);
 		exp = insertLists(x, var, exp);
+		exp = exp.replace("summation", "sigma");//allows using either for a summation
+		exp = exp.replace("product", "PI");//allows using either terminoligy for a product
 		exp = exp.replace("sqrt", "2\\|"); //change sqrt to square root funciton that works
 		exp = exp.replace("rt", "\\|"); //change nrt to the proper function
 		exp = parameterFuncs(x, var, exp); //solve functions with multiple parameters so parentheses dont get eliminated
@@ -272,6 +274,8 @@ public class ExpressionParser {
 		exp = logb(x, var, exp);
 		exp = mod(x, var, exp);
 		exp = random(x, var, exp);
+		exp = series(x, var, exp);
+		exp = calc(x, var, exp);
 
 		//one parameter functions
 		exp = functions(x, var, exp);
@@ -900,18 +904,18 @@ public class ExpressionParser {
 	 * @return The expression with the functions solved and replaced
 	 */
 	private String product(double x, String var, String exp){
-		int productI = exp.indexOf("product");
+		int productI = exp.indexOf("prod");
 		while(productI != -1){
-			Object[] fcimp = findCloseIndexMultiParam("product", exp, productI);
+			Object[] fcimp = findCloseIndexMultiParam("prod", exp, productI);
 			int closeIndex = (int)fcimp[0];
 			exp = (String)fcimp[1];
-			String[] split = exp.substring(productI+8, closeIndex).split("_,_");
+			String[] split = exp.substring(productI+5, closeIndex).split("_,_");
 			double product = 1;
 			for(String s : split){
 				product *= readExp(x, var, s);
 			}
 			exp = exp.replace(exp.substring(productI, closeIndex+1), "" + product);
-			productI = exp.indexOf("product");
+			productI = exp.indexOf("prod");
 		}
 		return exp;
 	}
@@ -938,6 +942,162 @@ public class ExpressionParser {
 				exp = exp.replace(exp.substring(logbI, closeIndex+1), "NaN");
 			}
 		}
+		return exp;
+	}
+	
+	/**
+	 * Called by the parameter funcs method, solves series and products in sigma and PI notation
+	 * called as sigma(var, initial var value, max var value, expression in terms of var)
+	 * or sigma(initial i value, max i value, expression in terms of i) or PI(same arguments)
+	 * @param x The value of the variable that should be used
+	 * @param var The text representing the variable that should be used
+	 * @param exp The expression to be read
+	 * @return The expression with the functions solved and replaced
+	 */
+	private String series(double x, String var, String exp){
+		int sumI = exp.indexOf("sigma");
+		while(sumI != -1){
+			Object[] fcimp = findCloseIndexMultiParam("sigma", exp, sumI);
+			int closeIndex = (int)fcimp[0];
+			exp = (String)fcimp[1];
+			String[] split = exp.substring(sumI+6, closeIndex).split("_,_");
+			if(split.length == 4){
+				//4 params
+				String v = split[0];
+				int i = (int) Math.round(readExp(x, var, split[1]));
+				int maxi = (int) Math.round(readExp(x, var, split[2]));
+				String ex = split[3];
+				double result = MathUtil.series(i, maxi, v, ex, this);
+				System.out.println(3);
+				exp = exp.replace(exp.substring(sumI, closeIndex+1), "" + result);
+				sumI = exp.indexOf("sigma");
+			}else if(split.length == 3){
+				//3 params, variable chosen to be i by default
+				int i = (int) Math.round(readExp(x, var, split[0]));
+				int maxi = (int) Math.round(readExp(x, var, split[1]));
+				String ex = split[2];
+				double result = MathUtil.series(i, maxi, "i", ex, this);
+				System.out.println(3);
+				exp = exp.replace(exp.substring(sumI, closeIndex+1), "" + result);
+				sumI = exp.indexOf("sigma");
+			}else{
+				//error
+				exp = exp.replace(exp.substring(sumI, closeIndex+1), "NaN");
+				sumI = exp.indexOf("sigma");
+			}
+		}
+		int prodI = exp.indexOf("PI");
+		while(prodI != -1){
+			Object[] fcimp = findCloseIndexMultiParam("PI", exp, prodI);
+			int closeIndex = (int)fcimp[0];
+			exp = (String)fcimp[1];
+			String[] split = exp.substring(prodI+3, closeIndex).split("_,_");
+			if(split.length == 4){
+				//4 params
+				String v = split[0];
+				System.out.println(split[0] + " " + split[1] + " " + split[2] + " " + split[3]);
+				int i = (int) Math.round(readExp(x, var, split[1]));
+				int maxi = (int) Math.round(readExp(x, var, split[2]));
+				String ex = split[3];
+				double result = MathUtil.product(i, maxi, v, ex, this);
+				exp = exp.replace(exp.substring(prodI, closeIndex+1), "" + result);
+				prodI = exp.indexOf("PI");
+			}else if(split.length == 3){
+				//3 params, variable chosen to be i by default
+				int i = (int) Math.round(readExp(x, var, split[0]));
+				int maxi = (int) Math.round(readExp(x, var, split[1]));
+				String ex = split[2];
+				double result = MathUtil.product(i, maxi, "i", ex, this);
+				exp = exp.replace(exp.substring(prodI, closeIndex+1), "" + result);
+				prodI = exp.indexOf("PI");
+			}else{
+				//error
+				exp = exp.replace(exp.substring(prodI, closeIndex+1), "NaN");
+				prodI = exp.indexOf("PI");
+			}
+		}
+		return exp;
+	}
+	/**
+	 * Called by the parameter funcs method, solves derivatives and integrals
+	 * passed in form of deriv(var, expression in terms of var, value of var to evaluate at, (optional) maxloops/accuracy)
+	 * max loops/accuracy affects the time it takes to find an approximation and the accuracy of the approximation, default is 1000
+	 * 1000 is higher than needed for most functions
+	 * also solves integrals as fnInt(a, b, expression in terms of var, var, (optional) maxloops/accuracy) a and b are initial and final var values
+	 * maxloops default is 500 for intergals
+	 * @param x The value of the variable that should be used
+	 * @param var The text representing the variable that should be used
+	 * @param exp The expression to be read
+	 * @return The expression with the functions solved and replaced
+	 */
+	private String calc(double x, String var, String exp){
+		int integI = exp.indexOf("fnInt");
+		while(integI != -1){
+			Object[] fcimp = findCloseIndexMultiParam("fnInt", exp, integI);
+			int closeIndex = (int)fcimp[0];
+			exp = (String)fcimp[1];
+			String[] split = exp.substring(integI+6, closeIndex).split("_,_");
+			if(split.length == 5){
+				//5 params
+				double a = readExp(x, var, split[0]);
+				double b = readExp(x, var, split[1]);
+				String ex = split[2];
+				String v = split[3].replace(" ", "");
+				int loops = (int)Math.round(readExp(x, var, split[4]));
+	
+				System.out.println(a + " " + b + " " + ex + " " + v + " " + loops);
+				
+				double result = MathUtil.integ(a, b, v, ex, this, loops);
+				exp = exp.replace(exp.substring(integI, closeIndex+1), "" + result);
+				integI = exp.indexOf("fnInt");
+			} else if(split.length == 4){
+				//4 params use default maxloops of 500
+				double a = readExp(x, var, split[0]);
+				double b = readExp(x, var, split[1]);
+				String ex = split[2];
+				String v = split[3].replace(" ", "");	
+	
+				double result = MathUtil.integ(a, b, v, ex, this, 500);
+				exp = exp.replace(exp.substring(integI, closeIndex+1), "" + result);
+				integI = exp.indexOf("fnInt");
+			}else{
+				//error
+				exp = exp.replace(exp.substring(integI, closeIndex+1), "NaN");
+				integI = exp.indexOf("fnInt");
+			}
+		}
+		int ddI = exp.indexOf("deriv");
+		while(ddI != -1){
+			Object[] fcimp = findCloseIndexMultiParam("deriv", exp, ddI);
+			int closeIndex = (int)fcimp[0];
+			exp = (String)fcimp[1];
+			String[] split = exp.substring(ddI+6, closeIndex).split("_,_");
+			if(split.length == 4){
+				//4 params
+				String v = split[0];
+				String ex = split[1];
+				double c = readExp(x, var, split[2]);
+				int loops = (int)Math.round(readExp(x, var, split[3]));
+				System.out.println(v + " " + ex + " " + c);
+				double result = MathUtil.deriv(c, v, ex, this, loops);
+				exp = exp.replace(exp.substring(ddI, closeIndex+1), "" + result);
+				ddI = exp.indexOf("deriv");
+			} else if(split.length == 3){
+				//3 params, use default maxloops/accuracy of 1000
+				String v = split[0];
+				String ex = split[1];
+				double c = readExp(x, var, split[2]);
+				System.out.println(v + " " + ex + " " + c);
+				double result = MathUtil.deriv(c, v, ex, this, 1000);
+				exp = exp.replace(exp.substring(ddI, closeIndex+1), "" + result);
+				ddI = exp.indexOf("deriv");
+			}else{
+				//error
+				exp = exp.replace(exp.substring(ddI, closeIndex+1), "NaN");
+				ddI = exp.indexOf("deriv");
+			}
+		}
+		
 		return exp;
 	}
 	/**
