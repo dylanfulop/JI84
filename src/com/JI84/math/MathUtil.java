@@ -1,7 +1,5 @@
 package com.JI84.math;
 
-import com.JI84.graphing.Window;
-
 public class MathUtil {
 
 	public static double limit(double x, String var, String exp, ExpressionParser ep, int maxLoops){
@@ -55,11 +53,33 @@ public class MathUtil {
 		return product;
 	}
 	
-	
-	public static void main(String[] args){
-		MathMode m = new MathMode(true, 0, 0, new Window(0, 0, 0, 0, 0, 0, 0));
-		ExpressionParser ep = new ExpressionParser(m,0);
-		System.out.println(integ(0, 3, "x", "2x^2", ep, 1000));
+	public static double factorial(double d){
+		if(d >= 0 && Math.round(d) == d){
+			double result = 1;
+			for(int i = 2; i <= d; i++)
+				result*=i;
+			return result;
+		}else{
+			return 0.0/0.0;
+		}
 	}
+
+	public static double perm(double n, double r) {
+		if(n >= 0 && r >= 0 && Math.round(n) == n && Math.round(r) == r){
+			if(n < r)
+				return 0;
+			double result = 1;
+			for(int i = 0; i < r; i++){
+				result*=(n-i);
+			}
+			return result;
+		}
+		return 0.0/0.0;
+	}
+
+	public static double comb(double n, double r) {
+		return perm(n, r)/factorial(r);
+	}
+
 
 }

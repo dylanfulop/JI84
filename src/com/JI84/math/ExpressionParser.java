@@ -98,6 +98,11 @@ public class ExpressionParser {
 									if(exp.contains("_r_")){
 										String[] seprad = exp.split("_r_");
 										return trig.radian(readExp(x, var, seprad[0]));
+									}else{
+										if(exp.contains("!")){
+											String[] sepfac = exp.split("!");
+											return MathUtil.factorial(readExp(x, var, sepfac[0]));
+										}
 									}
 								}
 							}
@@ -126,6 +131,7 @@ public class ExpressionParser {
 		exp = insertLists(x, var, exp);
 		exp = exp.replace("summation", "sigma");//allows using either for a summation
 		exp = exp.replace("product", "PI");//allows using either terminoligy for a product
+		exp = exp.replace("integ", "fnInt");//allows using either terminoligy for integrals
 		exp = exp.replace("sqrt", "2\\|"); //change sqrt to square root funciton that works
 		exp = exp.replace("rt", "\\|"); //change nrt to the proper function
 		exp = parameterFuncs(x, var, exp); //solve functions with multiple parameters so parentheses dont get eliminated
@@ -276,6 +282,7 @@ public class ExpressionParser {
 		exp = random(x, var, exp);
 		exp = series(x, var, exp);
 		exp = calc(x, var, exp);
+		exp = perm(x, var, exp);
 
 		//one parameter functions
 		exp = functions(x, var, exp);
@@ -844,7 +851,7 @@ public class ExpressionParser {
 			}else{
 				tq = ar[mid+len/2];
 			}
-			
+
 			exp = exp.replace(exp.substring(TQI, closeIndex+1), "" + tq);
 			TQI = exp.indexOf("TQ");
 		}
@@ -895,7 +902,7 @@ public class ExpressionParser {
 		}
 		return exp;
 	}
-	
+
 	/**
 	 * Called by the parameter funcs method, solves the product of a list of entries product(a, b, c, d, e, f, ...)
 	 * @param x The value of the variable that should be used
@@ -944,7 +951,50 @@ public class ExpressionParser {
 		}
 		return exp;
 	}
-	
+	/**
+	 * Called by the parameter funcs method, returns permutations nPr for P(n, r)
+	 * and combinations nCr for C(n, r)
+	 * @param x The value of the variable that should be used
+	 * @param var The text representing the variable that should be used
+	 * @param exp The expression to be read
+	 * @return The expression with the functions solved and replaced
+	 */
+	private String perm(double x, String var, String exp){
+		int cI = exp.indexOf("C");
+		while(cI != -1){
+			Object[] fcimp = findCloseIndexMultiParam("C", exp, cI);
+			int closeIndex = (int)fcimp[0];
+			exp = (String)fcimp[1];
+			String[] split = exp.substring(cI+2, closeIndex).split("_,_");
+			if(split.length == 2){
+				double n = readExp(x, var, split[0]);
+				double r = readExp(x, var, split[1]);
+				exp = exp.replace(exp.substring(cI, closeIndex+1), "" + MathUtil.comb(n, r));
+				cI = exp.indexOf("C");
+			}else{
+				//error
+				exp = exp.replace(exp.substring(cI, closeIndex+1), "NaN");
+			}
+		}
+		int pI = exp.indexOf("P");
+		while(pI != -1){
+			Object[] fcimp = findCloseIndexMultiParam("P", exp, pI);
+			int closeIndex = (int)fcimp[0];
+			exp = (String)fcimp[1];
+			String[] split = exp.substring(pI+2, closeIndex).split("_,_");
+			if(split.length == 2){
+				double n = readExp(x, var, split[0]);
+				double r = readExp(x, var, split[1]);
+				exp = exp.replace(exp.substring(pI, closeIndex+1), "" + MathUtil.perm(n, r));
+				pI = exp.indexOf("P");
+			}else{
+				//error
+				exp = exp.replace(exp.substring(pI, closeIndex+1), "NaN");
+			}
+		}
+		return exp;
+	}
+
 	/**
 	 * Called by the parameter funcs method, solves series and products in sigma and PI notation
 	 * called as sigma(var, initial var value, max var value, expression in terms of var)
@@ -1044,9 +1094,9 @@ public class ExpressionParser {
 				String ex = split[2];
 				String v = split[3].replace(" ", "");
 				int loops = (int)Math.round(readExp(x, var, split[4]));
-	
+
 				System.out.println(a + " " + b + " " + ex + " " + v + " " + loops);
-				
+
 				double result = MathUtil.integ(a, b, v, ex, this, loops);
 				exp = exp.replace(exp.substring(integI, closeIndex+1), "" + result);
 				integI = exp.indexOf("fnInt");
@@ -1056,7 +1106,7 @@ public class ExpressionParser {
 				double b = readExp(x, var, split[1]);
 				String ex = split[2];
 				String v = split[3].replace(" ", "");	
-	
+
 				double result = MathUtil.integ(a, b, v, ex, this, 500);
 				exp = exp.replace(exp.substring(integI, closeIndex+1), "" + result);
 				integI = exp.indexOf("fnInt");
@@ -1097,7 +1147,7 @@ public class ExpressionParser {
 				ddI = exp.indexOf("deriv");
 			}
 		}
-		
+
 		return exp;
 	}
 	/**
