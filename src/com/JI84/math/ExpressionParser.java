@@ -132,6 +132,8 @@ public class ExpressionParser {
 		exp = exp.replace("summation", "sigma");//allows using either for a summation
 		exp = exp.replace("product", "PI");//allows using either terminoligy for a product
 		exp = exp.replace("integ", "fnInt");//allows using either terminoligy for integrals
+		exp = exp.replace("iPart", "intpar");//doesnt get replaed with ipa\| or confused with permutations 
+		exp = exp.replace("fPart", "fpar"); //same issue ^^^^
 		exp = exp.replace("sqrt", "2\\|"); //change sqrt to square root funciton that works
 		exp = exp.replace("rt", "\\|"); //change nrt to the proper function
 		exp = parameterFuncs(x, var, exp); //solve functions with multiple parameters so parentheses dont get eliminated
@@ -182,7 +184,7 @@ public class ExpressionParser {
 			exp = exp.replace("-" + var, "-1*" + var);//if y1 = -x and x is -1, no more error
 
 			//for these functions, should be able to put a multiplier in front (front multiply = fm)
-			String[] fmFuncs = {"sin","cos","tan","arcsin","arctan","arccos","log","ln","csc","cot","sec","abs","floor","ceil","sqrt","pi","\u03C0","e"};
+			String[] fmFuncs = {"sin","cos","tan","arcsin","arctan","arccos","log","ln","csc","cot","sec","abs","floor","ceil","sqrt","pi","\u03C0","e","sinh","cosh","tanh","iPart","fPart"};
 			for(String s : fmFuncs)
 				exp = exp.replace(i+s, i+"*"+s);
 
@@ -327,7 +329,29 @@ public class ExpressionParser {
 			exp = exp.replace(exp.substring(ri, closeIndex+1), ""+r);
 			ri = exp.indexOf("round");
 		}
-
+		int ipi = exp.indexOf("intpar");
+		while(ipi != -1){
+			int closeIndex = findCloseIndex("intpar", exp, ipi);
+			String s = exp.substring(ipi + 7, closeIndex);
+			double d = readExp(x, var, s);
+			double r = Math.floor(d);
+			if(d < 0)
+				r = Math.ceil(d);
+			exp = exp.replace(exp.substring(ipi, closeIndex+1),"" + r);
+			ipi = exp.indexOf("intpar");
+		}
+		int fpi = exp.indexOf("fpar");
+		while(fpi != -1){
+			int closeIndex = findCloseIndex("fpar", exp, fpi);
+			String s = exp.substring(fpi + 5, closeIndex);
+			double d = readExp(x, var, s);
+			double r = Math.floor(d);
+			if(d < 0)
+				r = Math.ceil(d);
+			r = d - r;
+			exp = exp.replace(exp.substring(fpi, closeIndex+1),"" + r);
+			fpi = exp.indexOf("fpar");
+		}
 		return exp;
 
 	}
@@ -453,6 +477,13 @@ public class ExpressionParser {
 	 * @return The expression with the functions solved and replaced
 	 */
 	private String sin(double x, String var, String exp){
+		int shI = exp.indexOf("sinh");
+		while(shI != -1){
+			int closeIndex = findCloseIndex("sinh", exp, shI);
+			String s = exp.substring(shI + 5, closeIndex);
+			exp = exp.replace(exp.substring(shI, closeIndex+1), ""+Math.sinh(readExp(x, var, s)));
+			shI = exp.indexOf("sinh");
+		}
 		int sI = exp.indexOf("sin");
 		while(sI != -1){
 			int closeIndex = findCloseIndex("sin", exp, sI);
@@ -487,6 +518,13 @@ public class ExpressionParser {
 	 * @return The expression with the functions solved and replaced
 	 */
 	private String cos(double x, String var, String exp){
+		int chI = exp.indexOf("cosh");
+		while(chI != -1){
+			int closeIndex = findCloseIndex("cosh", exp, chI);
+			String s = exp.substring(chI + 5, closeIndex);
+			exp = exp.replace(exp.substring(chI, closeIndex+1), ""+Math.cosh(readExp(x, var, s)));
+			chI = exp.indexOf("cosh");
+		}
 		int cI = exp.indexOf("cos");
 		while(cI != -1){
 			int closeIndex = findCloseIndex("cos", exp, cI);
@@ -521,6 +559,13 @@ public class ExpressionParser {
 	 * @return The expression with the functions solved and replaced
 	 */
 	private String tan(double x, String var, String exp){
+		int thI = exp.indexOf("tanh");
+		while(thI != -1){
+			int closeIndex = findCloseIndex("tanh", exp, thI);
+			String s = exp.substring(thI + 5 , closeIndex);
+			exp = exp.replace(exp.substring(thI, closeIndex+1), ""+Math.tanh(readExp(x, var, s)));
+			thI = exp.indexOf("tanh");
+		}
 		int tI = exp.indexOf("tan");
 		while(tI != -1){
 			int closeIndex = findCloseIndex("tan", exp, tI);
